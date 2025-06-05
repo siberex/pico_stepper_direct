@@ -30,7 +30,7 @@ if (PICO_SDK_VERSION_STRING VERSION_LESS "2.1.1")
     message(FATAL_ERROR "Raspberry Pi Pico SDK version 2.1.1 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
 endif()
 
-project(${PROJECT} C ASM)
+project(${PROJECT} C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
