@@ -9,11 +9,16 @@
 
 #include "pico/stdlib.h"
 
-// Pin definitions - connect directly to coil terminals
+// Pin definitions
+// If your motor could spin from 3.3V and consumes 12mA per coil or less - connect directly.
+// Otherwise, use dedicated driver like TI DRV8836.
 #define COIL_A_POSITIVE 10
 #define COIL_A_NEGATIVE 11
 #define COIL_B_POSITIVE 12
 #define COIL_B_NEGATIVE 13
+
+// Step delay in milliseconds
+#define STEPPER_ONE_STEP_DELAY 8
 
 void setup_pins() {
     // Initialize all pins as outputs
@@ -22,6 +27,7 @@ void setup_pins() {
     gpio_init(COIL_B_POSITIVE);
     gpio_init(COIL_B_NEGATIVE);
 
+    // Set pin output to 12mA for direct connection
     gpio_set_drive_strength(COIL_A_POSITIVE, GPIO_DRIVE_STRENGTH_12MA);
     gpio_set_drive_strength(COIL_A_NEGATIVE, GPIO_DRIVE_STRENGTH_12MA);
     gpio_set_drive_strength(COIL_B_POSITIVE, GPIO_DRIVE_STRENGTH_12MA);
@@ -34,35 +40,35 @@ void setup_pins() {
 
 }
 
-void set_coil_a(int direction) {
+void set_coil_a(const int direction) {
     if (direction > 0) {
         // Forward: A+ high, A- low
-        gpio_put(COIL_A_POSITIVE, 1);
-        gpio_put(COIL_A_NEGATIVE, 0);
+        gpio_put(COIL_A_POSITIVE, true);
+        gpio_put(COIL_A_NEGATIVE, false);
     } else if (direction < 0) {
         // Reverse: A+ low, A- high
-        gpio_put(COIL_A_POSITIVE, 0);
-        gpio_put(COIL_A_NEGATIVE, 1);
+        gpio_put(COIL_A_POSITIVE, false);
+        gpio_put(COIL_A_NEGATIVE, true);
     } else {
         // Off: both low
-        gpio_put(COIL_A_POSITIVE, 0);
-        gpio_put(COIL_A_NEGATIVE, 0);
+        gpio_put(COIL_A_POSITIVE, false);
+        gpio_put(COIL_A_NEGATIVE, false);
     }
 }
 
-void set_coil_b(int direction) {
+void set_coil_b(const int direction) {
     if (direction > 0) {
         // Forward: B+ high, B- low
-        gpio_put(COIL_B_POSITIVE, 1);
-        gpio_put(COIL_B_NEGATIVE, 0);
+        gpio_put(COIL_B_POSITIVE, true);
+        gpio_put(COIL_B_NEGATIVE, false);
     } else if (direction < 0) {
         // Reverse: B+ low, B- high
-        gpio_put(COIL_B_POSITIVE, 0);
-        gpio_put(COIL_B_NEGATIVE, 1);
+        gpio_put(COIL_B_POSITIVE, false);
+        gpio_put(COIL_B_NEGATIVE, true);
     } else {
         // Off: both low
-        gpio_put(COIL_B_POSITIVE, 0);
-        gpio_put(COIL_B_NEGATIVE, 0);
+        gpio_put(COIL_B_POSITIVE, false);
+        gpio_put(COIL_B_NEGATIVE, false);
     }
 }
 
@@ -72,10 +78,10 @@ void motor_off() {
 }
 
 // Full step sequence
-void step_motor(int steps) {
+void step_motor(const int steps) {
     // Step sequence: [Coil A, Coil B]
     // Full step: A+B0, A0B+, A-B0, A0B-
-    int sequence[4][2] = {
+    const int sequence[4][2] = {
         {1, 0},   // Step 0: A forward, B off
         {0, 1},   // Step 1: A off, B forward
         {-1, 0},  // Step 2: A reverse, B off
@@ -96,14 +102,14 @@ void step_motor(int steps) {
             step_position = (step_position - 1 + 4) % 4;
         }
 
-        sleep_ms(5); // Adjust for desired speed
+        sleep_ms(STEPPER_ONE_STEP_DELAY); // Adjust for desired speed
     }
 }
 
 // Half step sequence for smoother motion
-void half_step_motor(int steps) {
+void half_step_motor(const int steps) {
     // Half step sequence: [Coil A, Coil B]
-    int sequence[8][2] = {
+    const int sequence[8][2] = {
         {1, 0},   // A+, B0
         {1, 1},   // A+, B+
         {0, 1},   // A0, B+
@@ -126,7 +132,7 @@ void half_step_motor(int steps) {
             step_position = (step_position - 1 + 8) % 8;
         }
 
-        sleep_ms(3); // Faster for half steps
+        sleep_ms(STEPPER_ONE_STEP_DELAY / 2); // Faster for half steps
     }
 }
 
@@ -135,20 +141,15 @@ int main() {
     setup_pins();
 
     while (true) {
-        // Example: rotate 200 steps forward
-        step_motor(200);
-        sleep_ms(1000);
+        // Assume one step = 18° (for larger motors it is usually 1.8°)
+        // 20 steps = half circle
+        // 40 = full circle
+        // 80 = 720°
+        step_motor(40);
+        sleep_ms(500);
 
-        // Then 200 steps backward
-        step_motor(-200);
-        sleep_ms(1000);
-
-        // Try half stepping for smoother motion
-        half_step_motor(400);
-        sleep_ms(1000);
-
-        half_step_motor(-400);
-        sleep_ms(1000);
+        half_step_motor(-40);
+        sleep_ms(500);
 
         tight_loop_contents();
     }

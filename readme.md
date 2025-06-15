@@ -1,6 +1,12 @@
 # RP2040/RP2350 stepper motor control example
 
+Stepper motor direct control example for Raspberry Pico MCU family.
 
+Full steps or half-stepping with SIO (no microstepping, no PIO).
+
+Compatible with stepper motor drivers of the DRV883* family.
+
+Coils could be connected directly to the GPIO pins (without a driver) if the motor is able to use 12mA per coil or less and could work from 3.3V.
 
 
 ## Build
