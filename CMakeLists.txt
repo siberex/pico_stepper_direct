@@ -60,3 +60,27 @@ target_link_libraries(${PROJECT} PRIVATE
 
 # Picotool processing (signing/encrypting/etc) and creating hex/bin/map/uf2 files in addition to ELF
 pico_add_extra_outputs(${PROJECT})
+
+
+# "make flash" to flash the firmware with openocd (connect the board with SWD connector first)
+add_custom_target(flash
+        openocd ${CMAKE_CURRENT_LIST_DIR}/openocd.cfg -c "program ${PROJECT}.elf verify reset exit"
+        COMMENT "openocd program verify reset"
+        DEPENDS ${PROJECT}
+)
+
+# "make gdb" to launch gdb server for both cores and RTT console
+# Connect to serial console: telnet 127.0.0.1 9090
+# Connect with gdb (core0): gdb "${TARGET}.elf" -ex "target extended-remote localhost:3333"
+add_custom_target(gdb
+        openocd -f ${CMAKE_CURRENT_LIST_DIR}/openocd_gdb.cfg
+        COMMENT "openocd GDB server with RTT"
+        DEPENDS ${PROJECT}
+)
+
+# "make flash_usb" to flash the firmware with picotool (connect the board in BOOTSEL mode first)
+add_custom_target(flash_usb
+        picotool load -f -x ${PROJECT}.uf2
+        COMMENT "picotool load"
+        DEPENDS ${PROJECT}
+)
