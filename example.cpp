@@ -15,7 +15,7 @@ int main() {
     stdio_init_all();
 
     const Stepper stepper;
-    stepper.m_DurationMicroseconds = 8'000;
+    stepper.m_DurationMicroseconds = 4'000;
     // stepper.m_StepAngle = 18;
 
     // ReSharper disable once CppDFAEndlessLoop
