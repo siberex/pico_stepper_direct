@@ -11,12 +11,19 @@
 
 Stepper::Stepper() : Stepper(0) {}
 Stepper::Stepper(const unsigned int positiveA) : Stepper(positiveA, positiveA + 1, positiveA + 2, positiveA + 3) {}
-Stepper::Stepper(const unsigned int positiveA, const unsigned int negativeA, const unsigned int positiveB, const unsigned int negativeB) :
-    m_GpioPositiveA(positiveA),
-    m_GpioNegativeA(negativeA),
-    m_GpioPositiveB(positiveB),
-    m_GpioNegativeB(negativeB) {
+Stepper::Stepper(const unsigned int positiveA, const unsigned int negativeA, const unsigned int positiveB,
+                 const unsigned int negativeB) :
+    m_GpioPositiveA(positiveA), m_GpioNegativeA(negativeA), m_GpioPositiveB(positiveB), m_GpioNegativeB(negativeB) {
     initGpio();
+}
+
+Stepper::~Stepper() {
+    off();
+
+    gpio_deinit(m_GpioPositiveA);
+    gpio_deinit(m_GpioNegativeA);
+    gpio_deinit(m_GpioPositiveB);
+    gpio_deinit(m_GpioNegativeB);
 }
 
 void Stepper::halfStep(const int steps) const {
@@ -78,8 +85,9 @@ void Stepper::initGpio() const {
     gpio_init(m_GpioPositiveB);
     gpio_init(m_GpioNegativeB);
 
-    // Set pin output to 12mA for direct connection
-    //
+    // Set pin output to 12 mA for direct connection
+    // If the motor could spin from 3.3V and consume <= 12 mA per coil - connect directly.
+    // Otherwise, use dedicated driver like TI DRV8836.
     gpio_set_drive_strength(m_GpioPositiveA, GPIO_DRIVE_STRENGTH_12MA);
     gpio_set_drive_strength(m_GpioNegativeA, GPIO_DRIVE_STRENGTH_12MA);
     gpio_set_drive_strength(m_GpioPositiveB, GPIO_DRIVE_STRENGTH_12MA);
@@ -121,4 +129,9 @@ void Stepper::setCoilB(const int8_t direction) const {
         gpio_put(m_GpioPositiveB, false);
         gpio_put(m_GpioNegativeB, false);
     }
+}
+
+void Stepper::off() const {
+    setCoilA(0);
+    setCoilB(0);
 }

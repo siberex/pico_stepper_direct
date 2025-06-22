@@ -45,17 +45,28 @@ public:
     /**
      *
      */
-    float m_StepAngle = 1.8f;
+    mutable float m_StepAngle = 1.8f;
 
-    unsigned int m_DurationMicroseconds = 1000;
-    bool m_MicroStepLinear = false;
+    mutable unsigned int m_DurationMicroseconds = 1000;
+    mutable bool m_MicroStepLinear = false;
 
     explicit Stepper();
     explicit Stepper(unsigned int positiveA);
     explicit Stepper(unsigned int positiveA, unsigned int negativeA, unsigned int positiveB, unsigned int negativeB);
-    ~Stepper() = default;
+    ~Stepper();
 
+    /**
+     * Half step sequence for smoother motion
+     *
+     * @param steps Number of steps to run
+     */
     void halfStep(int steps) const;
+
+    /**
+     * Full step sequence (jaggy and less torque, but faster)
+     *
+     * @param steps Number of steps to run
+     */
     void fullStep(int steps) const;
 
     void enableMicrostepping();
@@ -82,4 +93,5 @@ private:
     void initGpio() const;
     void setCoilA(int8_t direction) const;
     void setCoilB(int8_t direction) const;
+    void off() const;
 };
