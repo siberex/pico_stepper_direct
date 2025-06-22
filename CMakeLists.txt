@@ -52,12 +52,16 @@ pico_enable_stdio_usb(${PROJECT} 1)
 pico_enable_stdio_rtt(${PROJECT} 1)
 
 
+add_subdirectory(src)
+
 target_include_directories(${PROJECT} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        src
 )
 
 target_link_libraries(${PROJECT} PRIVATE 
         pico_stdlib
+        stepper
 )
 
 # Picotool processing (signing/encrypting/etc) and creating hex/bin/map/uf2 files in addition to ELF
