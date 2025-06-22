@@ -12,10 +12,10 @@
 // Pin definitions
 // If your motor could spin from 3.3V and consumes 12mA per coil or less - connect directly.
 // Otherwise, use dedicated driver like TI DRV8836.
-#define COIL_A_POSITIVE 10
-#define COIL_A_NEGATIVE 11
-#define COIL_B_POSITIVE 12
-#define COIL_B_NEGATIVE 13
+#define COIL_A_POSITIVE 0
+#define COIL_A_NEGATIVE 1
+#define COIL_B_POSITIVE 2
+#define COIL_B_NEGATIVE 3
 
 // Step delay in milliseconds
 #define STEPPER_ONE_STEP_DELAY 8
