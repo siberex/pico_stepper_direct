@@ -11,21 +11,12 @@
 
 #include "stepper.h"
 
-// Pin definitions
-#define COIL_A_POSITIVE 0
-#define COIL_A_NEGATIVE 1
-#define COIL_B_POSITIVE 2
-#define COIL_B_NEGATIVE 3
-
-// Step delay in milliseconds
-#define STEPPER_ONE_STEP_DELAY 8
-
 int main() {
     stdio_init_all();
 
-    const Stepper stepper{COIL_A_POSITIVE, COIL_A_NEGATIVE, COIL_B_POSITIVE, COIL_B_NEGATIVE};
-    stepper.m_DurationMicroseconds = STEPPER_ONE_STEP_DELAY * 1000;
-    stepper.m_StepAngle = 18;
+    const Stepper stepper;
+    stepper.m_DurationMicroseconds = 8'000;
+    // stepper.m_StepAngle = 18;
 
     // ReSharper disable once CppDFAEndlessLoop
     while (true) {
