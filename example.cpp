@@ -1,5 +1,5 @@
 /**
- * picostepper
+ * pico_stepper_direct
  *
  * Author: Stephen Jingle <sib.li>
  * Created: 05 Jun 2025
@@ -140,6 +140,7 @@ int main() {
     stdio_init_all();
     setup_pins();
 
+    // ReSharper disable once CppDFAEndlessLoop
     while (true) {
         // Assume one step = 18° (for larger motors it is usually 1.8°)
         // 20 steps = half circle
