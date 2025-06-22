@@ -18,6 +18,8 @@ cmake_minimum_required(VERSION 3.20)
 set(PROJECT stepper_direct)
 
 set(CMAKE_C_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # cmake -DPICO_BOARD=pico2 -DCMAKE_BUILD_TYPE=Debug --fresh ..
@@ -37,7 +39,7 @@ pico_sdk_init()
 
 # Add executable
 add_executable(${PROJECT}
-        main.c
+        example.cpp
 )
 
 pico_set_program_name(${PROJECT} "${PROJECT}")
@@ -50,12 +52,16 @@ pico_enable_stdio_usb(${PROJECT} 1)
 pico_enable_stdio_rtt(${PROJECT} 1)
 
 
+add_subdirectory(src)
+
 target_include_directories(${PROJECT} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        src
 )
 
 target_link_libraries(${PROJECT} PRIVATE 
         pico_stdlib
+        stepper
 )
 
 # Picotool processing (signing/encrypting/etc) and creating hex/bin/map/uf2 files in addition to ELF
