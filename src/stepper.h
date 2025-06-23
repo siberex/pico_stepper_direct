@@ -139,5 +139,5 @@ private:
     void initGpio() const;
     void setCoilA(int8_t direction) const;
     void setCoilB(int8_t direction) const;
-    void setMicroStep(int stepIndex) const;
+    void setMicroStep(int stepIndex, uint microsteps = 64) const;
 };

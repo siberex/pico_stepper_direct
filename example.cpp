@@ -26,19 +26,16 @@ int main() {
         // 80 = 720°
 
         stepper.disableMicrostepping();
-        stepper.fullStep(-20);
-        stepper.off();
+        stepper.fullStep(20);
         sleep_ms(1000);
 
-        stepper.halfStep(-40);
-        stepper.off();
+        stepper.halfStep(40);
         sleep_ms(1000);
 
         stepper.enableMicrostepping();
         // microstep ratio = 64 microsteps / 8 half-steps
         // 40 half steps = 20 full steps = 5 microsteps
         stepper.microStep(40/(MICROSTEPS/8));
-        stepper.off();
         sleep_ms(1000);
 
         tight_loop_contents();

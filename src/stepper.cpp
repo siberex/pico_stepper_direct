@@ -38,7 +38,9 @@ void deinitGpioPwm(const uint gpio) {
 }
 
 void setPwm(const PwmGpio &out, const float val) {
-    const int level = static_cast<int>(std::fabs(val) * PWM_WRAP);
+    // Convert interval [0; 1] → [0; 255]
+    // Additionally, accepts negative values and values > 1
+    const int level = static_cast<int>(std::fabs(val) * PWM_WRAP) % PWM_WRAP;
     pwm_set_chan_level(out.slice, out.channel, level);
 }
 
@@ -112,6 +114,27 @@ void Stepper::fullStep(const int steps) const {
     }
 }
 
+void Stepper::fullStepSinglePhase(const int steps) const {
+    if (m_Microstep) return;
+
+    static int step_position = 0;
+
+    for (int i = 0; i < abs(steps); i++) {
+        // Set coils according to the current step
+        setCoilA(k_SequenceFullStepSinglePhase[step_position][0]);
+        setCoilB(k_SequenceFullStepSinglePhase[step_position][1]);
+
+        // Move to the next step
+        if (steps > 0) {
+            step_position = (step_position + 1) % 4;
+        } else {
+            step_position = (step_position - 1 + 4) % 4;
+        }
+
+        sleep_us(m_DurationMicroseconds * 2);
+    }
+}
+
 void Stepper::microStep(const int steps) const {
     if (!m_Microstep) return;
 
@@ -130,11 +153,12 @@ void Stepper::microStep(const int steps) const {
     }
 }
 
-void Stepper::setMicroStep(const int stepIndex) const {
+void Stepper::setMicroStep(const int stepIndex, const uint microsteps) const {
+    // ReSharper disable once CppDFAConstantConditions
     if (!m_Microstep) return;
 
     // This is merely a phase angle for the current microstep, not the motor shaft angle
-    const auto angle = static_cast<float>(2.0f * M_PI * stepIndex / MICROSTEPS);
+    const auto angle = static_cast<float>(2.0f * M_PI * stepIndex / microsteps);
     const float sin_a = sinf(angle);
     const float cos_a = cosf(angle);
 
@@ -144,15 +168,15 @@ void Stepper::setMicroStep(const int stepIndex) const {
     const auto bNegative = getGpioPwmSlice(m_GpioNegativeB);
 
     // Coil A
-    setPwm(aPositive, sin_a > 0 ? sin_a : 0.0f);
-    setPwm(aNegative, sin_a < 0 ? -sin_a : 0.0f);
+    setPwm(aPositive, cos_a > 0 ? cos_a : 0.0f);
+    setPwm(aNegative, cos_a < 0 ? -cos_a : 0.0f);
 
     // Coil B
-    setPwm(bPositive, cos_a > 0 ? cos_a : 0.0f);
-    setPwm(bNegative, cos_a < 0 ? -cos_a : 0.0f);
+    setPwm(bPositive, sin_a > 0 ? sin_a : 0.0f);
+    setPwm(bNegative, sin_a < 0 ? -sin_a : 0.0f);
 }
 
-void Stepper::enableMicrostepping() {
+void Stepper::enableMicrostepping() const {
     initGpioPwm(m_GpioPositiveA);
     initGpioPwm(m_GpioNegativeA);
     initGpioPwm(m_GpioPositiveB);
@@ -160,7 +184,7 @@ void Stepper::enableMicrostepping() {
     m_Microstep = true;
 }
 
-void Stepper::disableMicrostepping() {
+void Stepper::disableMicrostepping() const {
     deinitGpioPwm(m_GpioPositiveA);
     deinitGpioPwm(m_GpioNegativeA);
     deinitGpioPwm(m_GpioPositiveB);
