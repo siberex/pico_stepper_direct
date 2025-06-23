@@ -18,8 +18,6 @@ int main() {
     stepper.m_DurationMicroseconds = 25'000;
     stepper.m_StepAngle = 18; // not used atm
 
-    stepper.enableMicrostepping();
-
     // ReSharper disable once CppDFAEndlessLoop
     while (true) {
         // Assume one step = 18° (for larger motors it is usually 1.8°)
@@ -27,16 +25,18 @@ int main() {
         // 40 half steps or 20 full steps = full circle
         // 80 = 720°
 
-        // stepper.fullStep(20);
-        // stepper.off();
-        // sleep_ms(1000);
-        //
-        // stepper.halfStep(40);
-        // stepper.off();
-        // sleep_ms(1000);
+        stepper.disableMicrostepping();
+        stepper.fullStep(-20);
+        stepper.off();
+        sleep_ms(1000);
 
+        stepper.halfStep(-40);
+        stepper.off();
+        sleep_ms(1000);
+
+        stepper.enableMicrostepping();
         // microstep ratio = 64 microsteps / 8 half-steps
-        // 40 half steps = 5 microsteps
+        // 40 half steps = 20 full steps = 5 microsteps
         stepper.microStep(40/(64/8));
         sleep_ms(1000);
 

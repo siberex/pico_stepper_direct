@@ -115,7 +115,8 @@ void Stepper::fullStep(const int steps) const {
 void Stepper::microStep(const int steps) const {
     if (!m_Microstep) return;
 
-    auto microstepDuration = static_cast<int> (m_DurationMicroseconds / MICROSTEPS);
+    // m_DurationMicroseconds is relative to half-stepping, so multiply by 8 half-steps first
+    auto microstepDuration = static_cast<int> (m_DurationMicroseconds * 8 / MICROSTEPS);
     if (microstepDuration == 0) microstepDuration = 1;
 
     for (int i = 0; i < abs(steps); i++) {
