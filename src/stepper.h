@@ -12,7 +12,7 @@
 
 // Pico SDK
 #include "pico/stdlib.h"
-
+#include "hardware/pwm.h"
 
 
 // Full step sequence: [Coil A, Coil B]
@@ -69,6 +69,11 @@ public:
      */
     void fullStep(int steps) const;
 
+    /**
+     * Disable control
+     */
+    void off() const;
+
     void enableMicrostepping();
     void disableMicrostepping();
 
@@ -93,5 +98,4 @@ private:
     void initGpio() const;
     void setCoilA(int8_t direction) const;
     void setCoilB(int8_t direction) const;
-    void off() const;
 };

@@ -21,14 +21,17 @@ int main() {
     // ReSharper disable once CppDFAEndlessLoop
     while (true) {
         // Assume one step = 18° (for larger motors it is usually 1.8°)
-        // 20 steps = half circle
-        // 40 = full circle
+        // 20 half steps = half circle
+        // 40 half steps or 20 full steps = full circle
         // 80 = 720°
+
         stepper.fullStep(20);
-        sleep_ms(500);
+        stepper.off();
+        sleep_ms(1000);
 
         stepper.halfStep(40);
-        sleep_ms(500);
+        stepper.off();
+        sleep_ms(1000);
 
         tight_loop_contents();
     }
