@@ -213,6 +213,21 @@ void Stepper::setCoilB(const int8_t direction) const {
 }
 
 void Stepper::off() const {
-    setCoilA(0);
-    setCoilB(0);
+    if (m_Microstep) {
+        const auto aPositive = getGpioPwmSlice(m_GpioPositiveA);
+        const auto aNegative = getGpioPwmSlice(m_GpioNegativeA);
+        const auto bPositive = getGpioPwmSlice(m_GpioPositiveB);
+        const auto bNegative = getGpioPwmSlice(m_GpioNegativeB);
+
+        // Coil A
+        setPwm(aPositive, 0.0f);
+        setPwm(aNegative, 0.0f);
+
+        // Coil B
+        setPwm(bPositive, 0.0f);
+        setPwm(bNegative, 0.0f);
+    } else {
+        setCoilA(0);
+        setCoilB(0);
+    }
 }
