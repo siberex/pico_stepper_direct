@@ -35,7 +35,9 @@ int main() {
         // stepper.off();
         // sleep_ms(1000);
 
-        stepper.microStep(40);
+        // microstep ratio = 64 microsteps / 8 half-steps
+        // 40 half steps = 5 microsteps
+        stepper.microStep(40/(64/8));
         sleep_ms(1000);
 
         tight_loop_contents();
