@@ -38,7 +38,7 @@ void deinitGpioPwm(const uint gpio) {
 }
 
 void setPwm(const PwmGpio &out, const float val) {
-    // Convert interval [0; 1] → [0; 255]
+    // Convert interval [0; 1] → [0; PWM_WRAP]
     // Additionally, accepts negative values and values > 1
     const int level = static_cast<int>(std::fabs(val) * PWM_WRAP) % PWM_WRAP;
     pwm_set_chan_level(out.slice, out.channel, level);
@@ -77,61 +77,64 @@ Stepper::~Stepper() {
 void Stepper::halfStep(const int steps) const {
     if (m_Microstep) return;
 
-    static int step_position = 0;
+    auto halfStepDuration = m_DurationMicroseconds / 2;
+    if (halfStepDuration == 0) halfStepDuration = 1;
+
+    static int sequenceIndex = 0;
 
     for (int i = 0; i < abs(steps); i++) {
-        setCoilA(k_SequenceHalfStep[step_position][0]);
-        setCoilB(k_SequenceHalfStep[step_position][1]);
+        setCoilA(k_SequenceHalfStep[sequenceIndex][0]);
+        setCoilB(k_SequenceHalfStep[sequenceIndex][1]);
 
         if (steps > 0) {
-            step_position = (step_position + 1) % 8;
+            sequenceIndex = (sequenceIndex + 1) % 8;
         } else {
-            step_position = (step_position - 1 + 8) % 8;
+            sequenceIndex = (sequenceIndex - 1 + 8) % 8;
         }
 
-        sleep_us(m_DurationMicroseconds);
+        sleep_us(halfStepDuration);
     }
 }
 
 void Stepper::fullStep(const int steps) const {
     if (m_Microstep) return;
 
-    static int step_position = 0;
+    static int sequenceIndex = 0;
 
     for (int i = 0; i < abs(steps); i++) {
         // Set coils according to the current step
-        setCoilA(k_SequenceFullStep[step_position][0]);
-        setCoilB(k_SequenceFullStep[step_position][1]);
+        setCoilA(k_SequenceFullStep[sequenceIndex][0]);
+        setCoilB(k_SequenceFullStep[sequenceIndex][1]);
 
         // Move to the next step
         if (steps > 0) {
-            step_position = (step_position + 1) % 4;
+            sequenceIndex = (sequenceIndex + 1) % 4;
         } else {
-            step_position = (step_position - 1 + 4) % 4;
+            sequenceIndex = (sequenceIndex - 1 + 4) % 4;
         }
 
-        sleep_us(m_DurationMicroseconds * 2);
+        sleep_us(m_DurationMicroseconds);
     }
 }
 
 void Stepper::fullStepSinglePhase(const int steps) const {
     if (m_Microstep) return;
 
-    static int step_position = 0;
+    static int sequenceIndex = 0;
 
     for (int i = 0; i < abs(steps); i++) {
         // Set coils according to the current step
-        setCoilA(k_SequenceFullStepSinglePhase[step_position][0]);
-        setCoilB(k_SequenceFullStepSinglePhase[step_position][1]);
+        setCoilA(k_SequenceFullStepSinglePhase[sequenceIndex][0]);
+        setCoilB(k_SequenceFullStepSinglePhase[sequenceIndex][1]);
 
         // Move to the next step
         if (steps > 0) {
-            step_position = (step_position + 1) % 4;
+            sequenceIndex = (sequenceIndex + 1) % 4;
         } else {
-            step_position = (step_position - 1 + 4) % 4;
+            sequenceIndex = (sequenceIndex - 1 + 4) % 4;
         }
 
-        sleep_us(m_DurationMicroseconds * 2);
+        sleep_us(m_DurationMicroseconds);
     }
 }
 
@@ -139,26 +142,26 @@ void Stepper::microStep(const int steps) const {
     if (!m_Microstep) return;
 
     // m_DurationMicroseconds is relative to half-stepping, so multiply by 8 half-steps first
-    auto microstepDuration = static_cast<int> (m_DurationMicroseconds * 8 / MICROSTEPS);
+    auto microstepDuration = static_cast<int> (m_DurationMicroseconds * 8 / m_Microsteps);
     if (microstepDuration == 0) microstepDuration = 1;
 
     for (int i = 0; i < abs(steps); i++) {
 
         // Rotate forward
         // FIXME: add backward rotation
-        for (int stepIndex = 0; stepIndex < MICROSTEPS; ++stepIndex) {
-            setMicroStep(stepIndex);
+        for (int sequenceIndex = 0; sequenceIndex < m_Microsteps; ++sequenceIndex) {
+            setMicroStep(sequenceIndex);
             sleep_us(microstepDuration);
         }
     }
 }
 
-void Stepper::setMicroStep(const int stepIndex, const uint microsteps) const {
+void Stepper::setMicroStep(const int sequenceIndex) const {
     // ReSharper disable once CppDFAConstantConditions
     if (!m_Microstep) return;
 
     // This is merely a phase angle for the current microstep, not the motor shaft angle
-    const auto angle = static_cast<float>(2.0f * M_PI * stepIndex / microsteps);
+    const auto angle = static_cast<float>(2.0f * M_PI * sequenceIndex / m_Microsteps);
     const float sin_a = sinf(angle);
     const float cos_a = cosf(angle);
 

@@ -46,14 +46,12 @@ static constexpr int8_t k_SequenceHalfStep[8][2] = {
     { 1,  0},   // {1, 0, 0, 0} = A ↑, B 0  = ⬆️
 };
 
+// not used at the moment
 static constexpr uint8_t microstepsLinear[9]       = {0, 32, 64, 96, 128, 160, 192, 224, 255};
 static constexpr uint8_t microstepsNonlinear[9]    = {0,  8, 24, 56, 128, 200, 232, 248, 255};
 
 
 constexpr auto PWM_WRAP = 255;
-
-// Number of microsteps divisions
-constexpr int MICROSTEPS = 64;
 
 // Each slice 0 to 7 (to 11 for RP2350B) has two channels, A and B.
 // Each GPIO pin is mapped according to this:
@@ -69,13 +67,24 @@ struct PwmGpio {
 
 class Stepper {
 public:
-    /**
-     *
-     */
+    // not used at the moment
     mutable float m_StepAngle = 1.8f;
 
+    /**
+     * Full step duration
+     *
+     *
+     */
     mutable unsigned int m_DurationMicroseconds = 1000;
+
+    /**
+     * Number of microsteps divisions
+     */
+    mutable unsigned int m_Microsteps = 64;
+
+    // not used at the moment
     mutable bool m_MicroStepLinear = false;
+
 
     explicit Stepper();
     explicit Stepper(unsigned int positiveA);
@@ -139,5 +148,5 @@ private:
     void initGpio() const;
     void setCoilA(int8_t direction) const;
     void setCoilB(int8_t direction) const;
-    void setMicroStep(int stepIndex, uint microsteps = 64) const;
+    void setMicroStep(int sequenceIndex) const;
 };

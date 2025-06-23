@@ -15,8 +15,9 @@ int main() {
     stdio_init_all();
 
     Stepper stepper;
-    stepper.m_DurationMicroseconds = 25'000;
-    stepper.m_StepAngle = 18; // not used atm
+    stepper.m_DurationMicroseconds = 50'000;
+    stepper.m_StepAngle = 18; // not used at the moment
+    stepper.m_Microsteps = 64;
 
     // ReSharper disable once CppDFAEndlessLoop
     while (true) {
@@ -35,7 +36,7 @@ int main() {
         stepper.enableMicrostepping();
         // microstep ratio = 64 microsteps / 8 half-steps
         // 40 half steps = 20 full steps = 5 microsteps
-        stepper.microStep(40/(MICROSTEPS/8));
+        stepper.microStep(static_cast<int>(40/(stepper.m_Microsteps/8)));
         sleep_ms(1000);
 
         tight_loop_contents();
