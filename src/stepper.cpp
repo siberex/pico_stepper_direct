@@ -135,3 +135,31 @@ void Stepper::off() const {
     setCoilA(0);
     setCoilB(0);
 }
+
+
+
+constexpr auto PWM_WRAP = 255;
+
+struct PwmOut {
+    uint slice;
+    uint channel;
+};
+
+void set_pwm(const PwmOut out, const float val) {
+    const int level = static_cast<int>((std::fabs(val)) * PWM_WRAP);
+    pwm_set_chan_level(out.slice, out.channel, level);
+}
+
+void step_motor(const int step_index) {
+    const float angle = (2.0f * M_PI * step_index) / 64;
+    float sin_a = sinf(angle);
+    float cos_a = cosf(angle);
+
+    // Coil A
+    // set_pwm(a_positive, sin_a > 0 ? sin_a : 0.0f);
+    // set_pwm(a_negative, sin_a < 0 ? -sin_a : 0.0f);
+
+    // Coil B
+    // set_pwm(b_positive, cos_a > 0 ? cos_a : 0.0f);
+    // set_pwm(b_negative, cos_a < 0 ? -cos_a : 0.0f);
+}
