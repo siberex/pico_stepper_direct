@@ -9,6 +9,45 @@ Compatible with stepper motor drivers of the DRV883* family.
 Coils could be connected directly to the GPIO pins (without a driver) if the motor is able to use 12mA per coil or less and could work from 3.3V.
 
 
+## Usage
+
+Vendor-in to your project:
+
+```bash
+mkdir -p vendor
+git submodule add https://github.com/siberex/pico_stepper_direct.git vendor/pico_stepper_direct
+```
+
+Edit your `CMakeLists.txt`:
+
+```cmake
+# Assuming Pico SDK set up earlier
+
+add_subdirectory(vendor/pico_stepper_direct/src)
+target_link_libraries(${PROJECT}
+        stepper
+)
+```
+
+In your code:
+
+```c++
+#include "pico/stdlib.h"
+#include "stepper.h"
+
+int main() {
+    const Stepper stepper{PIN_A_POSITIVE, PIN_A_NEGATIVE, PIN_B_POSITIVE, PIN_B_NEGATIVE};
+    stepper.m_DurationMicroseconds = 4'000;
+    
+    while (true) {   
+        stepper.fullStep(200);
+        stepper.halfStep(-400);
+        tight_loop_contents();
+    }
+}
+```
+
+
 ## Build
 
 Prerequisites: cmake, binutils, [Pico SDK 2.1.1](https://github.com/raspberrypi/pico-sdk)
