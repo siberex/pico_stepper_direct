@@ -40,6 +40,24 @@ static constexpr int8_t k_SequenceHalfStep[8][2] = {
 static constexpr uint8_t microstepsLinear[9]       = {0, 32, 64, 96, 128, 160, 192, 224, 255};
 static constexpr uint8_t microstepsNonlinear[9]    = {0,  8, 24, 56, 128, 200, 232, 248, 255};
 
+
+constexpr auto PWM_WRAP = 255;
+
+// Number of microsteps divisions
+constexpr int MICROSTEPS = 64;
+
+// Each slice 0 to 7 (to 11 for RP2350B) has two channels, A and B.
+// Each GPIO pin is mapped according to this:
+// https://github.com/raspberrypi/pico-sdk/blob/ee68c78d0afae2b69c03ae1a72bf5cc267a2d94c/src/rp2350/rp2350a_interface_pins.json#L57
+struct PwmGpio {
+    uint slice;
+    uint channel;
+    uint gpio;
+};
+
+
+
+
 class Stepper {
 public:
     /**
@@ -69,6 +87,8 @@ public:
      */
     void fullStep(int steps) const;
 
+    void microStep(int steps) const;
+
     /**
      * Disable control
      */
@@ -78,7 +98,7 @@ public:
     void disableMicrostepping();
 
 private:
-    bool m_Microstep = false;
+    mutable bool m_Microstep = false;
 
     // Coil A pins
     // positive high, negative low = ↑
@@ -98,4 +118,5 @@ private:
     void initGpio() const;
     void setCoilA(int8_t direction) const;
     void setCoilB(int8_t direction) const;
+    void setMicroStep(int stepIndex) const;
 };

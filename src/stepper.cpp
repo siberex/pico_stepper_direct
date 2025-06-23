@@ -9,6 +9,52 @@
 
 #include <cmath>
 
+
+PwmGpio getGpioPwmSlice(const uint gpio) {
+    const uint slice = pwm_gpio_to_slice_num(gpio);
+    const uint channel = pwm_gpio_to_channel(gpio);
+    return {slice, channel, gpio};
+}
+
+void initGpioPwm(const PwmGpio &gpioPwm) {
+    gpio_set_function(gpioPwm.gpio, GPIO_FUNC_PWM);
+    pwm_set_wrap(gpioPwm.slice, PWM_WRAP);
+    pwm_set_enabled(gpioPwm.slice, true);
+}
+
+void initGpioPwm(const uint gpio) {
+    const PwmGpio gpioPwm = getGpioPwmSlice(gpio);
+    initGpioPwm(gpioPwm);
+}
+
+void deinitGpioPwm(const PwmGpio &gpioPwm) {
+    pwm_set_enabled(gpioPwm.slice, false);
+    gpio_deinit(gpioPwm.gpio);
+}
+
+void deinitGpioPwm(const uint gpio) {
+    const PwmGpio gpioPwm = getGpioPwmSlice(gpio);
+    deinitGpioPwm(gpioPwm);
+}
+
+void setPwm(const PwmGpio &out, const float val) {
+    const int level = static_cast<int>(std::fabs(val) * PWM_WRAP);
+    pwm_set_chan_level(out.slice, out.channel, level);
+}
+
+void initGpioSio(const uint gpio) {
+    // Initialize pin as SIO output
+    gpio_init(gpio);
+
+    // Set pin output to 12 mA for direct connection
+    // If the motor could spin from 3.3V and consume <= 12 mA per coil - connect directly.
+    // Otherwise, use dedicated driver like TI DRV8836.
+    gpio_set_drive_strength(gpio, GPIO_DRIVE_STRENGTH_12MA);
+
+    gpio_set_dir(gpio, GPIO_OUT);
+}
+
+
 Stepper::Stepper() : Stepper(0) {}
 Stepper::Stepper(const unsigned int positiveA) : Stepper(positiveA, positiveA + 1, positiveA + 2, positiveA + 3) {}
 Stepper::Stepper(const unsigned int positiveA, const unsigned int negativeA, const unsigned int positiveB,
@@ -27,6 +73,7 @@ Stepper::~Stepper() {
 }
 
 void Stepper::halfStep(const int steps) const {
+    if (m_Microstep) return;
 
     static int step_position = 0;
 
@@ -45,6 +92,7 @@ void Stepper::halfStep(const int steps) const {
 }
 
 void Stepper::fullStep(const int steps) const {
+    if (m_Microstep) return;
 
     static int step_position = 0;
 
@@ -64,39 +112,71 @@ void Stepper::fullStep(const int steps) const {
     }
 }
 
+void Stepper::microStep(const int steps) const {
+    if (!m_Microstep) return;
+
+    auto microstepDuration = static_cast<int> (m_DurationMicroseconds / MICROSTEPS);
+    if (microstepDuration == 0) microstepDuration = 1;
+
+    for (int i = 0; i < abs(steps); i++) {
+
+        // Rotate forward
+        // FIXME: add backward rotation
+        for (int stepIndex = 0; stepIndex < MICROSTEPS; ++stepIndex) {
+            setMicroStep(stepIndex);
+            sleep_us(microstepDuration);
+        }
+    }
+}
+
+void Stepper::setMicroStep(const int stepIndex) const {
+    if (!m_Microstep) return;
+
+    // This is merely a phase angle for the current microstep, not the motor shaft angle
+    const auto angle = static_cast<float>(2.0f * M_PI * stepIndex / MICROSTEPS);
+    const float sin_a = sinf(angle);
+    const float cos_a = cosf(angle);
+
+    const auto aPositive = getGpioPwmSlice(m_GpioPositiveA);
+    const auto aNegative = getGpioPwmSlice(m_GpioNegativeA);
+    const auto bPositive = getGpioPwmSlice(m_GpioPositiveB);
+    const auto bNegative = getGpioPwmSlice(m_GpioNegativeB);
+
+    // Coil A
+    setPwm(aPositive, sin_a > 0 ? sin_a : 0.0f);
+    setPwm(aNegative, sin_a < 0 ? -sin_a : 0.0f);
+
+    // Coil B
+    setPwm(bPositive, cos_a > 0 ? cos_a : 0.0f);
+    setPwm(bNegative, cos_a < 0 ? -cos_a : 0.0f);
+}
+
 void Stepper::enableMicrostepping() {
-    gpio_set_function(m_GpioPositiveA, GPIO_FUNC_PWM);
-    gpio_set_function(m_GpioNegativeA, GPIO_FUNC_PWM);
-    gpio_set_function(m_GpioPositiveB, GPIO_FUNC_PWM);
-    gpio_set_function(m_GpioNegativeB, GPIO_FUNC_PWM);
+    initGpioPwm(m_GpioPositiveA);
+    initGpioPwm(m_GpioNegativeA);
+    initGpioPwm(m_GpioPositiveB);
+    initGpioPwm(m_GpioNegativeB);
     m_Microstep = true;
 }
+
 void Stepper::disableMicrostepping() {
+    deinitGpioPwm(m_GpioPositiveA);
+    deinitGpioPwm(m_GpioNegativeA);
+    deinitGpioPwm(m_GpioPositiveB);
+    deinitGpioPwm(m_GpioNegativeB);
     gpio_set_function(m_GpioPositiveA, GPIO_FUNC_SIO);
     gpio_set_function(m_GpioNegativeA, GPIO_FUNC_SIO);
     gpio_set_function(m_GpioPositiveB, GPIO_FUNC_SIO);
     gpio_set_function(m_GpioNegativeB, GPIO_FUNC_SIO);
     m_Microstep = false;
 }
+
 void Stepper::initGpio() const {
     // Initialize all pins as outputs
-    gpio_init(m_GpioPositiveA);
-    gpio_init(m_GpioNegativeA);
-    gpio_init(m_GpioPositiveB);
-    gpio_init(m_GpioNegativeB);
-
-    // Set pin output to 12 mA for direct connection
-    // If the motor could spin from 3.3V and consume <= 12 mA per coil - connect directly.
-    // Otherwise, use dedicated driver like TI DRV8836.
-    gpio_set_drive_strength(m_GpioPositiveA, GPIO_DRIVE_STRENGTH_12MA);
-    gpio_set_drive_strength(m_GpioNegativeA, GPIO_DRIVE_STRENGTH_12MA);
-    gpio_set_drive_strength(m_GpioPositiveB, GPIO_DRIVE_STRENGTH_12MA);
-    gpio_set_drive_strength(m_GpioNegativeB, GPIO_DRIVE_STRENGTH_12MA);
-
-    gpio_set_dir(m_GpioPositiveA, GPIO_OUT);
-    gpio_set_dir(m_GpioNegativeA, GPIO_OUT);
-    gpio_set_dir(m_GpioPositiveB, GPIO_OUT);
-    gpio_set_dir(m_GpioNegativeB, GPIO_OUT);
+    initGpioSio(m_GpioPositiveA);
+    initGpioSio(m_GpioNegativeA);
+    initGpioSio(m_GpioPositiveB);
+    initGpioSio(m_GpioNegativeB);
 }
 
 void Stepper::setCoilA(const int8_t direction) const {
@@ -134,32 +214,4 @@ void Stepper::setCoilB(const int8_t direction) const {
 void Stepper::off() const {
     setCoilA(0);
     setCoilB(0);
-}
-
-
-
-constexpr auto PWM_WRAP = 255;
-
-struct PwmOut {
-    uint slice;
-    uint channel;
-};
-
-void set_pwm(const PwmOut out, const float val) {
-    const int level = static_cast<int>((std::fabs(val)) * PWM_WRAP);
-    pwm_set_chan_level(out.slice, out.channel, level);
-}
-
-void step_motor(const int step_index) {
-    const float angle = (2.0f * M_PI * step_index) / 64;
-    float sin_a = sinf(angle);
-    float cos_a = cosf(angle);
-
-    // Coil A
-    // set_pwm(a_positive, sin_a > 0 ? sin_a : 0.0f);
-    // set_pwm(a_negative, sin_a < 0 ? -sin_a : 0.0f);
-
-    // Coil B
-    // set_pwm(b_positive, cos_a > 0 ? cos_a : 0.0f);
-    // set_pwm(b_negative, cos_a < 0 ? -cos_a : 0.0f);
 }
