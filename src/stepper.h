@@ -17,24 +17,33 @@
 
 // Full step sequence: [Coil A, Coil B]
 static constexpr int8_t k_SequenceFullStep[4][2] = {
-    // { A,  B}       Coils          Phase
+//  { A,  B}       Coils          Phase
+    { 1,  1},   // A ↑, B →     = ↗️
+    {-1,  1},   // A ↓, B →     = ↘️
+    {-1, -1},   // A ↓, B ←     = ↙️
+    { 1, -1},   // A ↑, B ←     = ↖️
+};
+
+static constexpr int8_t k_SequenceFullStepSinglePhase[4][2] = {
+//  { A,  B}       Coils          Phase
     { 1,  0},   // A ↑, B 0     = ⬆️
     { 0,  1},   // A 0, B →     = ➡️
     {-1,  0},   // A ↓, B 0     = ⬇️
-    { 0, -1}    // A 0, B ←     = ⬅️
+    { 0, -1},   // A 0, B ←     = ⬅️
 };
 
 // Half step sequence: [Coil A, Coil B]
+// See also: https://www.monolithicpower.com/learning/resources/bipolar-stepper-motors-part-i-control-modes#:~:text=of%203D%20printers-,Stepping%20Modes,-The%20bipolar%20stepper
 static constexpr int8_t k_SequenceHalfStep[8][2] = {
-    // { A,  B}       {GPIOs}        Coils       Phase
-    { 1,  0},   // {1, 0, 0, 0} = A ↑, B 0  = ⬆️
+//  { A,  B}       {GPIOs}        Coils       Phase
     { 1,  1},   // {1, 0, 1, 0} = A ↑, B →  = ↗️
     { 0,  1},   // {0, 0, 1, 0} = A 0, B →  = ➡️
     {-1,  1},   // {0, 1, 1, 0} = A ↓, B →  = ↘️
     {-1,  0},   // {0, 1, 0, 0} = A ↓, B 0  = ⬇️
     {-1, -1},   // {0, 1, 0, 1} = A ↓, B ←  = ↙️
     { 0, -1},   // {0, 0, 0, 1} = A 0, B ←  = ⬅️
-    { 1, -1}    // {1, 0, 0, 1} = A ↑, B ←  = ↖️
+    { 1, -1},   // {1, 0, 0, 1} = A ↑, B ←  = ↖️
+    { 1,  0},   // {1, 0, 0, 0} = A ↑, B 0  = ⬆️
 };
 
 static constexpr uint8_t microstepsLinear[9]       = {0, 32, 64, 96, 128, 160, 192, 224, 255};
@@ -74,19 +83,31 @@ public:
     ~Stepper();
 
     /**
-     * Half step sequence for smoother motion
+     * Half-step sequence for smoother motion
      *
-     * @param steps Number of steps to run
+     * @param steps Number of steps to run, positive for CW, negative for CCW
      */
     void halfStep(int steps) const;
 
     /**
-     * Full step sequence (jaggy and less torque, but faster)
+     * Full step sequence using two phases (jaggy but fast)
      *
-     * @param steps Number of steps to run
+     * @param steps Number of steps to run, positive for CW, negative for CCW
      */
     void fullStep(int steps) const;
 
+    /**
+     * Full step sequence using single phase (jaggy and less torque, but fast)
+     *
+     * @param steps Number of steps to run, positive for CW, negative for CCW
+     */
+    void fullStepSinglePhase(int steps) const;
+
+    /**
+     * Microstepping emulation with PWM
+     *
+     * @param steps
+     */
     void microStep(int steps) const;
 
     /**
@@ -94,8 +115,8 @@ public:
      */
     void off() const;
 
-    void enableMicrostepping();
-    void disableMicrostepping();
+    void enableMicrostepping() const;
+    void disableMicrostepping() const;
 
 private:
     mutable bool m_Microstep = false;
