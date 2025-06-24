@@ -1,12 +1,12 @@
 # RP2040/RP2350 stepper motor control example
 
-Stepper motor direct control example for Raspberry Pico MCU family.
+[Bipolar stepper motor](https://www.monolithicpower.com/learning/resources/bipolar-stepper-motors-part-i-control-modes) direct control example for Raspberry Pico MCU family.
 
-Full steps or half-stepping with SIO (no microstepping, no PIO).
+Full step or half-step with SIO (no microstepping, no PIO).
 
-Compatible with stepper motor drivers of the DRV883* family.
+Compatible with Dual H-bridge motor drivers, like DRV8835 or DRV8836.
 
-Coils could be connected directly to the GPIO pins (without a driver) if the motor is able to use 12mA per coil or less and could work from 3.3V.
+Coils could be connected directly to the GPIO pins (without a driver) if the motor is able to spin from <= 12 mA per coil and could work from 3.3V.
 
 
 ## Usage
@@ -37,12 +37,16 @@ In your code:
 
 int main() {
     const Stepper stepper{PIN_A_POSITIVE, PIN_A_NEGATIVE, PIN_B_POSITIVE, PIN_B_NEGATIVE};
-    stepper.m_DurationMicroseconds = 4'000;
+    stepper.m_DurationMicroseconds = 5'000;
+    const int stepsPerRevolute = 200;
     
     while (true) {   
-        stepper.fullStep(200);
-        stepper.halfStep(-400);
-        tight_loop_contents();
+        stepper.fullStep(stepsPerRevolute);
+        stepper.halfStep(-stepsPerRevolute * 2);
+        
+        stepper.enableMicrostepping();
+        stepper.microStep(stepsPerRevolute / 4);
+        stepper.disableMicrostepping();
     }
 }
 ```
@@ -54,7 +58,7 @@ Prerequisites: cmake, binutils, [Pico SDK 2.1.1](https://github.com/raspberrypi/
 
 ```bash
 mkdir -p build && cd build
-cmake -DPICO_USE_FASTEST_SUPPORTED_CLOCK=1 -DCMAKE_BUILD_TYPE=Debug -DPICO_DEOPTIMIZED_DEBUG=1 ..
+cmake -DPICO_USE_FASTEST_SUPPORTED_CLOCK=1 -DPICO_BOARD=pimoroni_tiny2040 -DCMAKE_BUILD_TYPE=Debug -DPICO_DEOPTIMIZED_DEBUG=1 ..
 # To clear CMake cache and reset compile options to defaults:
 # cmake --fresh ..
 make -j4
