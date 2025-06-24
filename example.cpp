@@ -15,7 +15,7 @@ int main() {
     stdio_init_all();
 
     const Stepper stepper;
-    stepper.m_DurationMicroseconds = 4'000;
+    stepper.m_DurationMicroseconds = 25'000;
     // stepper.m_StepAngle = 18;
 
     // ReSharper disable once CppDFAEndlessLoop
@@ -24,10 +24,10 @@ int main() {
         // 20 steps = half circle
         // 40 = full circle
         // 80 = 720°
-        stepper.fullStep(40);
+        stepper.fullStep(20);
         sleep_ms(500);
 
-        stepper.halfStep(-40);
+        stepper.halfStep(40);
         sleep_ms(500);
 
         tight_loop_contents();
