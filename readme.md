@@ -31,7 +31,7 @@ target_link_libraries(${PROJECT}
 )
 ```
 
-In your code:
+In your code (see also [example.cpp](./example.cpp)):
 
 ```c++
 #include "pico/stdlib.h"
