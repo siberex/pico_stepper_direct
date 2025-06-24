@@ -40,6 +40,9 @@ int main() {
         stepper.halfStep(stepsPerRevolute * 2);
         sleep_ms(1000);
 
+        // Note: It could crash silently here if the motor is connected via dual H-bridge improperly!
+        // Guaranteed to crash when both coil contacts are mixed up (after-bridge A1 switched with A2 and B1 switched with B2).
+        // Clang invocations inside, so you will not be able to catch any exception.
         stepper.enableMicrostepping();
         // microstep ratio = full-step number of steps / 4
         // 40 half steps = 20 full steps = 5 microsteps
