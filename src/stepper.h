@@ -8,7 +8,10 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstdint>
+#include <numbers>
+#include <ranges>
 
 // Pico SDK
 #include "pico/stdlib.h"

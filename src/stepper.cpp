@@ -7,8 +7,6 @@
 
 #include "stepper.h"
 
-#include <cmath>
-#include <ranges>
 
 PwmGpio getGpioPwmSlice(const uint gpio) {
     const uint slice = pwm_gpio_to_slice_num(gpio);
@@ -174,7 +172,7 @@ void Stepper::setMicroStep(const unsigned int sequenceIndex) const {
     if (!m_Microstep) return;
 
     // This is merely a phase angle for the current microstep, not the motor shaft angle
-    const auto angle = static_cast<float>(2.0f * M_PI * sequenceIndex / m_Microsteps);
+    const auto angle = static_cast<float>(2.0f * std::numbers::pi * sequenceIndex / m_Microsteps);
     const float phaseSin = sinf(angle);
     const float phaseCos = cosf(angle);
 

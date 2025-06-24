@@ -42,6 +42,12 @@ add_executable(${PROJECT}
         example.cpp
 )
 
+target_compile_options(${PROJECT} PRIVATE
+        -Wall
+        -Wextra
+        -Wformat
+)
+
 pico_set_program_name(${PROJECT} "${PROJECT}")
 
 # Modify the below lines to enable/disable output over UART/USB

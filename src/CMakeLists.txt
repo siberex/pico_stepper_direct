@@ -2,6 +2,12 @@ if (NOT TARGET stepper)
     add_library("stepper" INTERFACE
             ${CMAKE_CURRENT_LIST_DIR}/stepper.h
     )
+    target_compile_features("stepper" INTERFACE cxx_std_20)
+    target_compile_options("stepper" INTERFACE
+            -Wall
+            -Wextra
+            -Wformat
+    )
 
     target_sources("stepper" INTERFACE
             ${CMAKE_CURRENT_LIST_DIR}/stepper.cpp
