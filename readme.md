@@ -26,7 +26,14 @@ Edit your `CMakeLists.txt`:
 # Assuming Pico SDK set up earlier
 
 add_subdirectory(vendor/pico_stepper_direct/src)
+target_include_directories(${PROJECT} PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}
+        # ...
+        vendor/pico_stepper_direct/src
+)
 target_link_libraries(${PROJECT}
+        pico_stdlib
+        # ...
         stepper
 )
 ```
@@ -82,7 +89,9 @@ Reset device programmatically from the host:
 
 ```bash
 # To reset MCU with SWD:
-./reset.sh:
+./reset.sh
+# To reset MCU via USB connection:
+picotool reboot -f
 ```
 
 ### Flash by USB
