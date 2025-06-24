@@ -2,11 +2,13 @@
 
 [Bipolar stepper motor](https://www.monolithicpower.com/learning/resources/bipolar-stepper-motors-part-i-control-modes) direct control example for Raspberry Pico MCU family.
 
-Full step or half-step with SIO (no microstepping, no PIO).
+Full step mode (two-phase) or half-stepping with GPIO (SIO).
+
+Microstepping with PWM.
 
 Compatible with Dual H-bridge motor drivers, like DRV8835 or DRV8836.
 
-Coils could be connected directly to the GPIO pins (without a driver) if the motor is able to spin from <= 12 mA per coil and could work from 3.3V.
+Coils could be connected directly to the GPIO pins (without a driver or mosfet bridge) if the motor is small enough and could work from 3.3V and 12 mA per coil.
 
 
 ## Usage
