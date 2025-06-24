@@ -77,20 +77,20 @@ Stepper::~Stepper() {
 void Stepper::halfStep(const int steps) const {
     if (m_Microstep) return;
 
-    const unsigned int sequenceSize = std::size(k_SequenceHalfStep);
+    constexpr unsigned int sequenceSize = std::size(k_SequenceHalfStep);
     auto halfStepDuration = m_DurationMicroseconds / 2;
     if (halfStepDuration == 0) halfStepDuration = 1;
 
-    static int sequenceIndex = 0;
+    static unsigned int sequenceIndex = 0;
 
     for (int i = 0; i < abs(steps); i++) {
         setCoilA(k_SequenceHalfStep[sequenceIndex][0]);
         setCoilB(k_SequenceHalfStep[sequenceIndex][1]);
 
         if (steps > 0) {
-            sequenceIndex = (sequenceIndex + 1) % 8;
+            sequenceIndex = (sequenceIndex + 1) % sequenceSize;
         } else {
-            sequenceIndex = (sequenceIndex - 1 + 8) % 8;
+            sequenceIndex = (sequenceIndex - 1 + sequenceSize) % sequenceSize;
         }
 
         sleep_us(halfStepDuration);
@@ -100,7 +100,9 @@ void Stepper::halfStep(const int steps) const {
 void Stepper::fullStep(const int steps) const {
     if (m_Microstep) return;
 
-    static int sequenceIndex = 0;
+    constexpr unsigned int sequenceSize = std::size(k_SequenceFullStep);
+
+    static unsigned int sequenceIndex = 0;
 
     for (int i = 0; i < abs(steps); i++) {
         // Set coils according to the current step
@@ -109,9 +111,9 @@ void Stepper::fullStep(const int steps) const {
 
         // Move to the next step
         if (steps > 0) {
-            sequenceIndex = (sequenceIndex + 1) % 4;
+            sequenceIndex = (sequenceIndex + 1) % sequenceSize;
         } else {
-            sequenceIndex = (sequenceIndex - 1 + 4) % 4;
+            sequenceIndex = (sequenceIndex - 1 + sequenceSize) % sequenceSize;
         }
 
         sleep_us(m_DurationMicroseconds);
@@ -121,7 +123,9 @@ void Stepper::fullStep(const int steps) const {
 void Stepper::fullStepSinglePhase(const int steps) const {
     if (m_Microstep) return;
 
-    static int sequenceIndex = 0;
+    constexpr unsigned int sequenceSize = std::size(k_SequenceFullStep);
+
+    static unsigned int sequenceIndex = 0;
 
     for (int i = 0; i < abs(steps); i++) {
         // Set coils according to the current step
@@ -130,9 +134,9 @@ void Stepper::fullStepSinglePhase(const int steps) const {
 
         // Move to the next step
         if (steps > 0) {
-            sequenceIndex = (sequenceIndex + 1) % 4;
+            sequenceIndex = (sequenceIndex + 1) % sequenceSize;
         } else {
-            sequenceIndex = (sequenceIndex - 1 + 4) % 4;
+            sequenceIndex = (sequenceIndex - 1 + sequenceSize) % sequenceSize;
         }
 
         sleep_us(m_DurationMicroseconds);
@@ -140,6 +144,8 @@ void Stepper::fullStepSinglePhase(const int steps) const {
 }
 
 void Stepper::microStep(const int steps) const {
+    using namespace std::views;
+
     if (!m_Microstep) return;
 
     // m_DurationMicroseconds is relative to full step mode, which consists of 4 repeating steps, so multiply by 4
@@ -147,16 +153,15 @@ void Stepper::microStep(const int steps) const {
     if (microstepDuration == 0) microstepDuration = 1;
 
     for (int i = 0; i < abs(steps); i++) {
-
         if (steps > 0) {
             // Rotate forward
-            for (unsigned int sequenceIndex = 0; sequenceIndex < m_Microsteps; ++sequenceIndex) {
+            for (const unsigned int sequenceIndex : iota(0) | take(m_Microsteps)) {
                 setMicroStep(sequenceIndex);
                 sleep_us(microstepDuration);
             }
         } else {
             // Rotate backwards
-            for (unsigned int sequenceIndex = m_Microsteps - 1; sequenceIndex > 0; --sequenceIndex) {
+            for (const unsigned int sequenceIndex : iota(0) | take(m_Microsteps) | reverse) {
                 setMicroStep(sequenceIndex);
                 sleep_us(microstepDuration);
             }
