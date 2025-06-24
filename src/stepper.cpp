@@ -8,7 +8,7 @@
 #include "stepper.h"
 
 #include <cmath>
-
+#include <ranges>
 
 PwmGpio getGpioPwmSlice(const uint gpio) {
     const uint slice = pwm_gpio_to_slice_num(gpio);
@@ -77,6 +77,7 @@ Stepper::~Stepper() {
 void Stepper::halfStep(const int steps) const {
     if (m_Microstep) return;
 
+    const unsigned int sequenceSize = std::size(k_SequenceHalfStep);
     auto halfStepDuration = m_DurationMicroseconds / 2;
     if (halfStepDuration == 0) halfStepDuration = 1;
 

@@ -38,11 +38,15 @@ In your code:
 int main() {
     const Stepper stepper{PIN_A_POSITIVE, PIN_A_NEGATIVE, PIN_B_POSITIVE, PIN_B_NEGATIVE};
     stepper.m_DurationMicroseconds = 5'000;
+    const int stepsPerRevolute = 200;
     
     while (true) {   
-        stepper.fullStep(200);
-        stepper.halfStep(-400);
-        tight_loop_contents();
+        stepper.fullStep(stepsPerRevolute);
+        stepper.halfStep(-stepsPerRevolute * 2);
+        
+        stepper.enableMicrostepping();
+        stepper.microStep(stepsPerRevolute / 4);
+        stepper.disableMicrostepping();
     }
 }
 ```
