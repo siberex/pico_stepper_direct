@@ -37,7 +37,7 @@ In your code:
 
 int main() {
     const Stepper stepper{PIN_A_POSITIVE, PIN_A_NEGATIVE, PIN_B_POSITIVE, PIN_B_NEGATIVE};
-    stepper.m_DurationMicroseconds = 2'500;
+    stepper.m_DurationMicroseconds = 5'000;
     
     while (true) {   
         stepper.fullStep(200);

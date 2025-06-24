@@ -141,29 +141,36 @@ void Stepper::fullStepSinglePhase(const int steps) const {
 void Stepper::microStep(const int steps) const {
     if (!m_Microstep) return;
 
-    // m_DurationMicroseconds is relative to half-stepping, so multiply by 8 half-steps first
-    auto microstepDuration = static_cast<int> (m_DurationMicroseconds * 8 / m_Microsteps);
+    // m_DurationMicroseconds is relative to full step mode, which consists of 4 repeating steps, so multiply by 4
+    auto microstepDuration = static_cast<int>(m_DurationMicroseconds / m_Microsteps * 4);
     if (microstepDuration == 0) microstepDuration = 1;
 
     for (int i = 0; i < abs(steps); i++) {
 
-        // Rotate forward
-        // FIXME: add backward rotation
-        for (int sequenceIndex = 0; sequenceIndex < m_Microsteps; ++sequenceIndex) {
-            setMicroStep(sequenceIndex);
-            sleep_us(microstepDuration);
+        if (steps > 0) {
+            // Rotate forward
+            for (unsigned int sequenceIndex = 0; sequenceIndex < m_Microsteps; ++sequenceIndex) {
+                setMicroStep(sequenceIndex);
+                sleep_us(microstepDuration);
+            }
+        } else {
+            // Rotate backwards
+            for (unsigned int sequenceIndex = m_Microsteps - 1; sequenceIndex > 0; --sequenceIndex) {
+                setMicroStep(sequenceIndex);
+                sleep_us(microstepDuration);
+            }
         }
     }
 }
 
-void Stepper::setMicroStep(const int sequenceIndex) const {
+void Stepper::setMicroStep(const unsigned int sequenceIndex) const {
     // ReSharper disable once CppDFAConstantConditions
     if (!m_Microstep) return;
 
     // This is merely a phase angle for the current microstep, not the motor shaft angle
     const auto angle = static_cast<float>(2.0f * M_PI * sequenceIndex / m_Microsteps);
-    const float sin_a = sinf(angle);
-    const float cos_a = cosf(angle);
+    const float phaseSin = sinf(angle);
+    const float phaseCos = cosf(angle);
 
     const auto aPositive = getGpioPwmSlice(m_GpioPositiveA);
     const auto aNegative = getGpioPwmSlice(m_GpioNegativeA);
@@ -171,12 +178,12 @@ void Stepper::setMicroStep(const int sequenceIndex) const {
     const auto bNegative = getGpioPwmSlice(m_GpioNegativeB);
 
     // Coil A
-    setPwm(aPositive, cos_a > 0 ? cos_a : 0.0f);
-    setPwm(aNegative, cos_a < 0 ? -cos_a : 0.0f);
+    setPwm(aPositive, phaseCos > 0 ? phaseCos : 0.0f);
+    setPwm(aNegative, phaseCos < 0 ? -phaseCos : 0.0f);
 
     // Coil B
-    setPwm(bPositive, sin_a > 0 ? sin_a : 0.0f);
-    setPwm(bNegative, sin_a < 0 ? -sin_a : 0.0f);
+    setPwm(bPositive, phaseSin > 0 ? phaseSin : 0.0f);
+    setPwm(bNegative, phaseSin < 0 ? -phaseSin : 0.0f);
 }
 
 void Stepper::enableMicrostepping() const {

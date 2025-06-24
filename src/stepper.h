@@ -67,7 +67,7 @@ struct PwmGpio {
 
 class Stepper {
 public:
-    // not used at the moment
+    // not used internally at the moment
     mutable float m_StepAngle = 1.8f;
 
     /**
@@ -148,5 +148,5 @@ private:
     void initGpio() const;
     void setCoilA(int8_t direction) const;
     void setCoilB(int8_t direction) const;
-    void setMicroStep(int sequenceIndex) const;
+    void setMicroStep(unsigned int sequenceIndex) const;
 };
